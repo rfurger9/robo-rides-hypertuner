@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Vehicle {
+  id                   String   @id @default(uuid())
+  vehicleKey           String   @unique @map("vehicle_key")
+  displayName          String   @map("display_name")
+  manufacturer         String?
+  msrp                 Float
+  batteryKwh           Float    @map("battery_kwh")
+  efficiencyMiPerKwh   Float    @map("efficiency_mi_per_kwh")
+  rangeMiles           Int      @map("range_miles")
+  modelYear            Int      @map("model_year")
+  isDefault            Boolean  @default(false) @map("is_default")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("vehicles")
+}
+
+model Scenario {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  config      String   // JSON stored as string for SQLite
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("scenarios")
+}
+
+model Miner {
+  id                String   @id @default(uuid())
+  minerKey          String   @unique @map("miner_key")
+  displayName       String   @map("display_name")
+  manufacturer      String
+  minerType         String   @map("miner_type") // "asic" or "gpu"
+  algorithm         String   // sha256, scrypt, kawpow, autolykos
+  hashRate          Float    @map("hash_rate") // TH/s for ASIC, MH/s for GPU
+  hashRateUnit      String   @map("hash_rate_unit") // "TH/s" or "MH/s"
+  powerWatts        Int      @map("power_watts")
+  efficiencyJTh     Float?   @map("efficiency_j_th") // For ASICs
+  vramGb            Int?     @map("vram_gb") // For GPUs
+  msrpUsd           Float    @map("msrp_usd")
+  noiseDb           Int?     @map("noise_db")
+  coolingType       String?  @map("cooling_type")
+  isDefault         Boolean  @default(false) @map("is_default")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("miners")
+}
+
+model HumanoidPlatform {
+  id                    String   @id @default(uuid())
+  platformKey           String   @unique @map("platform_key")
+  displayName           String   @map("display_name")
+  manufacturer          String
+  heightCm              Int      @map("height_cm")
+  weightKg              Int      @map("weight_kg")
+  payloadCapacityKg     Int      @map("payload_capacity_kg")
+  batteryKwh            Float    @map("battery_kwh")
+  runtimeHours          Float    @map("runtime_hours")
+  chargeTimeHours       Float    @map("charge_time_hours")
+  walkingSpeedKph       Float    @map("walking_speed_kph")
+  estimatedMsrp         Float    @map("estimated_msrp")
+  monthlyLeaseEstimate  Float    @map("monthly_lease_estimate")
+  availability          String
+  capabilities          String   // JSON stored as string for capability ratings
+  isDefault             Boolean  @default(false) @map("is_default")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("humanoid_platforms")
+}
