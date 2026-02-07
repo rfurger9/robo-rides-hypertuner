@@ -128,3 +128,114 @@ export function clearCurrentScenario(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(CURRENT_SCENARIO_KEY);
 }
+
+/**
+ * Export all scenarios to a JSON file
+ */
+export function exportScenarios(): void {
+  const scenarios = getSavedScenarios();
+  const currentScenario = loadCurrentScenario();
+
+  const exportData = {
+    version: "1.0",
+    exportedAt: new Date().toISOString(),
+    scenarios,
+    currentScenario,
+  };
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+    type: "application/json",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `robo-rides-scenarios-${new Date().toISOString().split("T")[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Export a single scenario to a JSON file
+ */
+export function exportSingleScenario(id: string): void {
+  const scenario = loadScenario(id);
+  if (!scenario) return;
+
+  const exportData = {
+    version: "1.0",
+    exportedAt: new Date().toISOString(),
+    scenario,
+  };
+
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+    type: "application/json",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${scenario.name.replace(/[^a-z0-9]/gi, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Import scenarios from a JSON file
+ * Returns the number of scenarios imported
+ */
+export function importScenarios(file: File): Promise<{ imported: number; errors: string[] }> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        const errors: string[] = [];
+        let imported = 0;
+
+        // Handle single scenario export
+        if (data.scenario) {
+          const scenario = data.scenario;
+          if (scenario.config && scenario.name) {
+            saveScenario(scenario.name, scenario.config);
+            imported++;
+          } else {
+            errors.push("Invalid scenario format");
+          }
+        }
+
+        // Handle multiple scenarios export
+        if (data.scenarios && Array.isArray(data.scenarios)) {
+          for (const scenario of data.scenarios) {
+            if (scenario.config && scenario.name) {
+              saveScenario(scenario.name, scenario.config);
+              imported++;
+            } else {
+              errors.push(`Skipped invalid scenario`);
+            }
+          }
+        }
+
+        // Optionally restore current scenario
+        if (data.currentScenario) {
+          saveCurrentScenario(data.currentScenario);
+        }
+
+        resolve({ imported, errors });
+      } catch (error) {
+        resolve({ imported: 0, errors: ["Failed to parse JSON file"] });
+      }
+    };
+
+    reader.onerror = () => {
+      resolve({ imported: 0, errors: ["Failed to read file"] });
+    };
+
+    reader.readAsText(file);
+  });
+}
